@@ -1,0 +1,21 @@
+# 1. Variables
+
+## 1.1 Late30_59
+ - Anomalous values (98) in quantile 0.99
+ - Mean value: 2.38
+
+## 1.1 Late60_89
+
+## 1.1 Util
+ - A maior parte dos inadimplentes possui o quociente inferior a 1. No entanto a distribuição possui cauda assimétrica pesada à direita,
+ indicando que uma parte pequena dos inadimplentes possui um quociente de utilização de crédito substancialmente elevado (mais que 500%)
+ - Inconsistências cadastrais ou mesmo um comportamento financeiro arriscado pode estar presente em uma pequena parte dos inadimplentes.
+ - Valores elevados desta variável normalmente estão associados a uma alta probabilidade de inadimplência. 
+ - A modelagem sugere valores substancialmente elevados nos 1% maiores valores do conjunto de dados.
+
+ ## 1.2 Age
+  - A distribuição dos dados mostra uma concentração significativa na faixa entre 30 e 60 anos, concentrando mais que
+  80% dos inadimplentes nesta região.
+  - Observa-se queda substancial dos inadimplentes a partir de 60 anos.
+  - Deve-se calcular o percentual de inadimplência por faixa etária e verificar se a taxa de inadimplência na faixa 60+ é
+  significativamente menor, o que indicaria um comportamento financeiro mais conservador deste perfil.
