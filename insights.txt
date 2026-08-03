@@ -1,0 +1,53 @@
+Age:
+A inadimplência atinge 12% nas faixas etárias de 23-40 anos, reduzindo progressivamente até 2% nos clientes
+com idade superior a 70 anos. Os achados indicam poder preditivo moderado para esta variável, sugerindo
+que a faixa etária de 23-40 anos deve ser analisada com atenção, ao passo que clientes mais idosos têm possivelmente
+comportamento mais conservador em relação às finanças.
+
+Util:
+A inadimplência chega a 57% na faixa de 75-100%, quase o dobro das demais faixas.
+Achados sugerem alto poder preditivo nesta variável, apontando de que o elevado percentual de utilização
+de limite de crédito pode estar fortemente associado à inadimplência.
+
+Late30_59:
+
+Quase 50% dos clientes com mais de 4 atrasos entre 30 e 60 dias no intervalo observado
+se tornam inadimplentes, em contraste apenas 5% dos clientes com um ou nenhum atraso de 30 a 60 dias
+se torna inadimplente. Histórico de atrasos recorrentes é um dos sinais mais diretos de comportamento de
+risco futuro. Achado sugere que exista uma alto poder preditivo nesta variável.
+
+Late60_89:
+
+Mais de 50% dos clientes com dois ou mais episódios de atraso entre 60 e 89 dias se tornam inadimplentes,
+em contraste, apenas 6% dos clientes com um ou menos episódio de atraso moderado ao longo do tempo observado
+se torna inadimplente. Tal como a variável Late30_59, os achados sugerem um alto poder preditivo para esta variável.
+
+Late90:
+
+Seguindo a tendência das demais variáveis de atraso leve e moderado, clientes com dois ou mais episódios de atraso grave (90+ dias)
+se tornam inadimplentes, ao passo que pouco menos de 6% daqueles com um ou menos atraso grave se torna inadimplente.
+Sugere alto poder preditivo para esta variável.
+
+OpenCred:
+O percentual de inadimplentes na segmentação analisada é inferior a 10% para as classes. O valores se situam
+entre 8,5%, para os clientes com até 5 linhas de crédito abertas e 5,5%, para os clientes que tem entre 6 e 10 linhas de
+crédito abertas. O gráfico sugere que o número de linhas de crédito abertas não está fortemente vinculado
+à inadimplência.
+
+Income:
+Quase 50% dos clientes na faixa salarial mensal de 2 a 4k se tornam inadimplentes, em comparação com menos de 7% nas faixas
+de 0 a 1k e de 50k+. Achados sugerem alto valor preditivo para a variável renda mensal, e apontam uma faixa de atenção para
+a concessão de crédito.
+
+No.Dep:
+Achados indicam um aumento gradativo de 6% para 12% com o número de dependentes indo de 1 a mais de 5.
+Existe uma sugestão de que o aumento de dependentes pode levar ao aumento da inadimplência, possivelmente por pressão do
+orçamento familiar. A relação preditiva desta variável pode ser moderada.
+
+Debt/Income:
+O percentual máximo de inadimplência atinge 9% na categoria 200-500%. Não são observadas relações monotônicas entre o percentual débito/renda
+e a taxa de inadimplência, sugerindo um poder preditivo moderado para esta variável.
+
+RealEstate:
+A maior proporção de inadimplentes se encontra na faixa de clientes com 3+ empréstimos/linhas de crédito com garantias imobiliárias,
+que chega a 12% nesta faixa. Os achados sugerem um poder preditivo baixo/moderado para esta variável.
