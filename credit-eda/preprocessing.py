@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
+from sklearn.model_selection import train_test_split
+
 ROOT = plib.Path(__file__).resolve().parent
 
 credit_data = pd.read_csv(ROOT / 'data' / 'cs-training.csv')
@@ -76,5 +78,15 @@ credit_data['LateScore'] = 1*credit_data['Late30_59'] + credit_data['Late60_89']
 
 credit_data['UtilAbove100'] = np.where(credit_data['Util'] > 100, 1, 0)
 
-print(credit_data.head(10))
+#Splitting train/test
+
+X = credit_data.drop(columns='Default')
+y = credit_data['Default']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+#print(X_train.head(50))
+
+print(f"y_train: {y_train.value_counts(normalize=True)}")
+print(f"y_test: {y_test.value_counts(normalize=True)}")
 
