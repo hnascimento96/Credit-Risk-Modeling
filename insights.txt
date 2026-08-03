@@ -63,3 +63,6 @@ e a taxa de inadimplência, sugerindo um poder preditivo moderado para esta vari
 RealEstate:
 A maior proporção de inadimplentes se encontra na faixa de clientes com 3+ empréstimos/linhas de crédito com garantias imobiliárias,
 que chega a 12% nesta faixa. Os achados sugerem um poder preditivo baixo/moderado para esta variável.
+
+____________________________________________________________________________________________________________________________________
+
