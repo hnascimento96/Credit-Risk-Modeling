@@ -1,3 +1,15 @@
+Missing_values:
+
+As seguintes colunas possuem dados nulos:
+
+Income: 6,9% dos não nulos são inadimplentes;
+        5,6% dos nulos são inadimplentes.
+No.Dep: 6,7% dos não nulos são inadimplentes
+        4,5% dos nulos são inadimplentes
+
+As diferenças percentuais sugerem que os valores nulos não tem por si só alto poder preditivo.
+
+____________________________________________________________________________________________________________________
 Age:
 A inadimplência atinge 12% nas faixas etárias de 23-40 anos, reduzindo progressivamente até 2% nos clientes
 com idade superior a 70 anos. Os achados indicam poder preditivo moderado para esta variável, sugerindo

@@ -192,7 +192,130 @@ def default_rate_by_range(df, column_name, bins, labels, xlabel):
 
      #credit_by_range = pd.cut(df[column_name], bins=bins, labels=labels)
      #defaulters_by_range = pd.cut(df[df['Default'] == 1][column_name], bins=bins, labels=labels)
-     
+
+def default_rate_plots(credit_data):
+     default_rate_by_range(credit_data, 'Age', bins=[0, 17, 22, 25, 30, 40, 50, 60, 70, float('inf')], labels=['0-17', '18-22', '23-25', '26-30', '31-40', '41-50', '51-60', '61-70', '70+'], xlabel='Age')
+
+     default_rate_by_range(
+     credit_data,
+     'Util',
+     bins=[0, 10, 20, 50, 75, 95, 100, 150, 200, 500, float('inf')],
+     labels=[
+          '0–10%',
+          '10–20%',
+          '20–50%',
+          '50–75%',
+          '75–95%',
+          '95–100%',
+          '100–150%',
+          '150–200%',
+          '200–500%',
+          '>500%'
+     ],
+          xlabel = 'Util'
+     )
+
+     default_rate_by_range(
+          credit_data,
+          'Late30_59',
+          bins=[0, 1, 2, 3, 4, float('inf')],
+          labels=['1', '2', '3', '4', '4+'],
+          xlabel='Late30_59'
+     )
+
+     default_rate_by_range(
+          credit_data,
+          'Late60_89',
+          bins=[0, 1, 2, 3, 4, float('inf')],
+          labels=['1', '2', '3', '4', '4+'],
+          xlabel='Late60_89'
+     )
+
+     default_rate_by_range(
+          credit_data,
+          'Late90',
+          bins=[0, 1, 2, 3, 4, float('inf')],
+          labels=['1', '2', '3', '4', '4+'],
+          xlabel='Late90'
+     )
+
+     default_rate_by_range(
+          credit_data,
+          'OpenCred',
+          bins=[0, 5, 10, 15, 20, 25, float('inf')],
+          labels=['0-5', '6-10', '11-15', '16-20', '21-25', '25+'],
+          xlabel='OpenCred'
+     )
+
+     default_rate_by_range(
+          credit_data,
+          'Income',
+          bins=[0, 1, 2, 4, 6, 8, 10, 15, 20, 50, float('inf')],
+          labels=['0-1k', '1-2k', '2-4k', '4-6k', '6-8k', '8-10k', '10-15k', '15-20k', '20-50k', '50+'],
+          xlabel='Income'
+     )
+
+     default_rate_by_range(
+          credit_data,
+          'No.Dep',
+          bins=[0, 1, 2, 3, 4, 5, float('inf')],
+          labels=['1', '2', '3', '4', '5', '5+'],
+          xlabel='No.Dep'
+     )
+
+     default_rate_by_range(
+     credit_data,
+     'Debt',
+     bins=[0, 10, 20, 50, 75, 100, 150, 200, 500, 1000, float('inf')],
+     labels=[
+          '0–10%',
+          '10–20%',
+          '20–50%',
+          '50–75%',
+          '75–100%',
+          '100–150%',
+          '150–200%',
+          '200–500%',
+          '500–1000%',
+          '>1000%'
+     ],
+     xlabel='Debt'
+     )
+
+     default_rate_by_range(
+     credit_data,
+     'RealEstate',
+     bins=[0, 1, 2, 3, float('inf')],
+     labels=[
+          '1',
+          '2',
+          '3',
+          '3+'
+     ],
+     xlabel='RealEstate'
+     )
+
+def missing_values_statistics(credit_data):
+     print("-"*150)
+     print("Statistical analysis of missing values by column")
+
+     columns = credit_data.columns.to_list()
+
+     for column in columns:
+
+          
+          print('Statistics for non-missing values:')
+          mask = ~credit_data[column].isna()
+          print(f"{column}:{credit_data[mask]['Default'].value_counts(normalize=True)}")
+
+
+          #Gets a DF for missing values
+          mask = credit_data[column].isna()
+          missed_df = credit_data[mask]
+
+          print('Statistics for missing values:')
+          print(f"{column}:{missed_df['Default'].value_counts(normalize=True)}")
+          
 #######################################################################
 
 ROOT = plib.Path(__file__).resolve().parent
@@ -267,107 +390,11 @@ defaulter = credit_data[credit_data['Default']==1]
 
 defaulter_statistics(defaulter)
 quantile_analysis(defaulter)
-plot_graph(defaulter)
+#plot_graph(defaulter)
 
-default_rate_by_range(credit_data, 'Age', bins=[0, 17, 22, 25, 30, 40, 50, 60, 70, float('inf')], labels=['0-17', '18-22', '23-25', '26-30', '31-40', '41-50', '51-60', '61-70', '70+'], xlabel='Age')
+#default_rate_plots(credit_data)
 
-default_rate_by_range(
-    credit_data,
-    'Util',
-    bins=[0, 10, 20, 50, 75, 95, 100, 150, 200, 500, float('inf')],
-    labels=[
-        '0–10%',
-        '10–20%',
-        '20–50%',
-        '50–75%',
-        '75–95%',
-        '95–100%',
-        '100–150%',
-        '150–200%',
-        '200–500%',
-        '>500%'
-    ],
-     xlabel = 'Util'
-)
+missing_values_statistics(credit_data)
 
-default_rate_by_range(
-     credit_data,
-     'Late30_59',
-     bins=[0, 1, 2, 3, 4, float('inf')],
-     labels=['1', '2', '3', '4', '4+'],
-     xlabel='Late30_59'
-)
-
-default_rate_by_range(
-     credit_data,
-     'Late60_89',
-     bins=[0, 1, 2, 3, 4, float('inf')],
-     labels=['1', '2', '3', '4', '4+'],
-     xlabel='Late60_89'
-)
-
-default_rate_by_range(
-     credit_data,
-     'Late90',
-     bins=[0, 1, 2, 3, 4, float('inf')],
-     labels=['1', '2', '3', '4', '4+'],
-     xlabel='Late90'
-)
-
-default_rate_by_range(
-     credit_data,
-     'OpenCred',
-     bins=[0, 5, 10, 15, 20, 25, float('inf')],
-     labels=['0-5', '6-10', '11-15', '16-20', '21-25', '25+'],
-     xlabel='OpenCred'
-)
-
-default_rate_by_range(
-     credit_data,
-     'Income',
-     bins=[0, 1, 2, 4, 6, 8, 10, 15, 20, 50, float('inf')],
-     labels=['0-1k', '1-2k', '2-4k', '4-6k', '6-8k', '8-10k', '10-15k', '15-20k', '20-50k', '50+'],
-     xlabel='Income'
-)
-
-default_rate_by_range(
-     credit_data,
-     'No.Dep',
-     bins=[0, 1, 2, 3, 4, 5, float('inf')],
-     labels=['1', '2', '3', '4', '5', '5+'],
-     xlabel='No.Dep'
-)
-
-default_rate_by_range(
-    credit_data,
-    'Debt',
-    bins=[0, 10, 20, 50, 75, 100, 150, 200, 500, 1000, float('inf')],
-    labels=[
-        '0–10%',
-        '10–20%',
-        '20–50%',
-        '50–75%',
-        '75–100%',
-        '100–150%',
-        '150–200%',
-        '200–500%',
-        '500–1000%',
-        '>1000%'
-    ],
-    xlabel='Debt'
-)
-
-default_rate_by_range(
-    credit_data,
-    'RealEstate',
-    bins=[0, 1, 2, 3, float('inf')],
-    labels=[
-        '1',
-        '2',
-        '3',
-        '3+'
-    ],
-    xlabel='RealEstate'
-)
 
 plt.show()
