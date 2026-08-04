@@ -5,6 +5,14 @@ import seaborn as sns
 import numpy as np
 
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import f1_score
 
 ROOT = plib.Path(__file__).resolve().parent
 
@@ -89,4 +97,46 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 print(f"y_train: {y_train.value_counts(normalize=True)}")
 print(f"y_test: {y_test.value_counts(normalize=True)}")
+
+################################################################
+scaler = StandardScaler()
+
+scaler.fit(X_train)
+
+X_train_scaled = scaler.transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+################################################################
+model = LogisticRegression(
+    random_state=42,
+    max_iter=1000
+)
+
+model.fit(X_train_scaled, y_train)
+y_pred = model.predict(X_test_scaled)
+
+y_prob = model.predict_proba(X_test_scaled)[:,1]
+
+################################################################
+auc = roc_auc_score(y_test, y_prob)
+print(f"AUC:{auc}")
+
+print(f"Confusion matrix:{confusion_matrix(y_test, y_pred)} ")
+
+print(f"Report:\n {classification_report(y_test,y_pred)}")
+
+#################################################################
+
+print("-"*200)
+print("Threshold\t Recall\t Precision\t F1-score")
+
+thresholds = [0.05, 0.1, 0.25, 0.30, 0.4]
+
+for threshold in thresholds:
+    y_pred = (y_prob >= threshold).astype(int)
+    print(f"{threshold}\t {recall_score(y_test, y_pred)}\t {precision_score(y_test, y_pred)}\t {f1_score(y_test, y_pred)}")
+
+
+
+
 
