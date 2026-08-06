@@ -3,6 +3,8 @@ import pathlib as plib
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -13,6 +15,75 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
+from sklearn.metrics import roc_curve
+from sklearn.model_selection import cross_val_score, StratifiedKFold
+
+import optuna
+
+from lightgbm import LGBMClassifier
+
+def optimize_lgbm(X_train, y_train):
+
+    def objective_lgbm(trial):
+
+        n_estimators = trial.suggest_int("n_estimators", 100, 500)
+        num_leaves = trial.suggest_int("num_leaves", 20, 200)
+        max_depth = trial.suggest_int("max_depth", 3, 10)
+        learning_rate = trial.suggest_float("learning_rate", 0.01, 0.1)
+
+
+        model = LGBMClassifier(num_leaves=num_leaves, max_depth=max_depth, learning_rate=learning_rate, n_estimators=n_estimators)
+
+        #Suffles and splits in 5 parts
+        cv = StratifiedKFold(
+            n_splits=5,
+            shuffle=True,
+            random_state=42
+        )
+
+        auc = cross_val_score(
+            model,
+            X_train,
+            y_train,
+            cv = cv,
+            scoring='roc_auc'
+            ).mean()
+
+        return auc
+
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective_lgbm, n_trials=10)
+
+    return study.best_params, study.best_value
+
+
+def model_evaluation(y_test, y_pred, y_prob, model_name):
+
+    print("-"*50)
+    print(f"Evaluation metrics for {model_name}\n")
+
+    auc = roc_auc_score(y_test, y_prob)
+    print(f"AUC:{auc}")
+
+    print(f"Confusion matrix\n:{confusion_matrix(y_test, y_pred)} ")
+
+    print(f"Report:\n {classification_report(y_test,y_pred)}")
+
+    fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+
+    plt.figure()
+    plt.plot(fpr, tpr, label=f"Model {model_name}")
+    plt.plot([0,1],[0,1], label='Random')
+    plt.xlabel('FPR')
+    plt.ylabel('TPR')
+    plt.title('ROC Curve')
+    plt.legend()
+
+    ks = np.abs(fpr - tpr)
+    optimal_cut_index = np.argmax(ks)
+    ks_max = np.max(ks)
+
+    print(f"KS: {ks_max:.2f}, Best cut value: {thresholds[optimal_cut_index]:.2f}")
 
 ROOT = plib.Path(__file__).resolve().parent
 
@@ -99,6 +170,7 @@ print(f"y_train: {y_train.value_counts(normalize=True)}")
 print(f"y_test: {y_test.value_counts(normalize=True)}")
 
 ################################################################
+####### Scaling
 scaler = StandardScaler()
 
 scaler.fit(X_train)
@@ -107,7 +179,10 @@ X_train_scaled = scaler.transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 ################################################################
+####### Training
+
 model = LogisticRegression(
+    class_weight='balanced',
     random_state=42,
     max_iter=1000
 )
@@ -118,23 +193,16 @@ y_pred = model.predict(X_test_scaled)
 y_prob = model.predict_proba(X_test_scaled)[:,1]
 
 ################################################################
-auc = roc_auc_score(y_test, y_prob)
-print(f"AUC:{auc}")
 
-print(f"Confusion matrix:{confusion_matrix(y_test, y_pred)} ")
+#model_evaluation(y_test, y_pred, y_prob, "Logistic Regression")
 
-print(f"Report:\n {classification_report(y_test,y_pred)}")
 
-#################################################################
+################################################################
+#LightGBM + Optuna
 
-print("-"*200)
-print("Threshold\t Recall\t Precision\t F1-score")
+lgbm_hyper_param, best_lgbm_auc = optimize_lgbm(X_train, y_train)
+print(lgbm_hyper_param, best_lgbm_auc)
 
-thresholds = [0.05, 0.1, 0.25, 0.30, 0.4]
-
-for threshold in thresholds:
-    y_pred = (y_prob >= threshold).astype(int)
-    print(f"{threshold}\t {recall_score(y_test, y_pred)}\t {precision_score(y_test, y_pred)}\t {f1_score(y_test, y_pred)}")
 
 
 
