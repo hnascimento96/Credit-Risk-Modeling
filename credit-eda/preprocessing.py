@@ -19,6 +19,7 @@ from sklearn.metrics import roc_curve
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 
 import optuna
+import joblib
 
 from lightgbm import LGBMClassifier
 
@@ -52,7 +53,7 @@ def optimize_lgbm(X_train, y_train):
         return auc
 
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective_lgbm, n_trials=10)
+    study.optimize(objective_lgbm, n_trials=50)
 
     return study.best_params, study.best_value
 
@@ -202,6 +203,8 @@ y_prob = model.predict_proba(X_test_scaled)[:,1]
 
 lgbm_hyper_param, best_lgbm_auc = optimize_lgbm(X_train, y_train)
 print(lgbm_hyper_param, best_lgbm_auc)
+
+joblib.dump(lgbm_hyper_param, "best_lgbm_hyper_params.joblib")
 
 
 
