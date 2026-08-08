@@ -17,23 +17,43 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_curve
 from sklearn.model_selection import cross_val_score, StratifiedKFold
+from scipy.stats import ks_2samp
 
 import optuna
 import joblib
 
 from lightgbm import LGBMClassifier
+from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+def compute_metrics(name, y_test, y_prob, y_pred):
+    auc  = roc_auc_score(y_test, y_prob)
+    ks   = ks_2samp(y_prob[y_test==0], y_prob[y_test==1]).statistic
+    gini = 2 * auc - 1
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    print(f"{name} → AUC: {auc:.4f} | KS: {ks:.4f} | Gini: {gini:.4f} | Precision: {precision:.4f} | Recall: {recall:.4f}")
 
 def optimize_lgbm(X_train, y_train):
 
     def objective_lgbm(trial):
 
-        n_estimators = trial.suggest_int("n_estimators", 100, 500)
-        num_leaves = trial.suggest_int("num_leaves", 20, 200)
-        max_depth = trial.suggest_int("max_depth", 3, 10)
-        learning_rate = trial.suggest_float("learning_rate", 0.01, 0.1)
+        params = {
+        'n_estimators':       trial.suggest_int('n_estimators', 100, 500),
+        'learning_rate':      trial.suggest_float('learning_rate', 0.01, 0.1, log=True),
+        'num_leaves':         trial.suggest_int('num_leaves', 80, 200),
+        'max_depth':          -1,   # fixo — deixar num_leaves controlar
+        'min_child_samples':  trial.suggest_int('min_child_samples', 20, 100),
+        'subsample':          trial.suggest_float('subsample', 0.6, 1.0),
+        'colsample_bytree':   trial.suggest_float('colsample_bytree', 0.6, 1.0),
+        'scale_pos_weight':   13,
+        'random_state':       42,
+        'n_jobs':             -1,
+    }
 
-
-        model = LGBMClassifier(num_leaves=num_leaves, max_depth=max_depth, learning_rate=learning_rate, n_estimators=n_estimators)
+        model = LGBMClassifier(
+            **params
+        )
 
         #Suffles and splits in 5 parts
         cv = StratifiedKFold(
@@ -47,6 +67,7 @@ def optimize_lgbm(X_train, y_train):
             X_train,
             y_train,
             cv = cv,
+            n_jobs=-1,
             scoring='roc_auc'
             ).mean()
 
@@ -193,6 +214,12 @@ y_pred = model.predict(X_test_scaled)
 
 y_prob = model.predict_proba(X_test_scaled)[:,1]
 
+auc = roc_auc_score(y_test, y_prob)
+
+print("-"*50)
+print("Evaluation for Logistic Regression")
+compute_metrics('Logistic Regression', y_test, y_prob, y_pred)
+
 ################################################################
 
 #model_evaluation(y_test, y_pred, y_prob, "Logistic Regression")
@@ -201,10 +228,94 @@ y_prob = model.predict_proba(X_test_scaled)[:,1]
 ################################################################
 #LightGBM + Optuna
 
-lgbm_hyper_param, best_lgbm_auc = optimize_lgbm(X_train, y_train)
-print(lgbm_hyper_param, best_lgbm_auc)
+#lgbm_hyper_param, best_lgbm_auc = optimize_lgbm(X_train, y_train)
+#print(lgbm_hyper_param, best_lgbm_auc)
 
-joblib.dump(lgbm_hyper_param, "best_lgbm_hyper_params.joblib")
+#joblib.dump(lgbm_hyper_param, "best_lgbm_hyper_params.joblib")
+
+lgbm_hyper_params = joblib.load("best_lgbm_hyper_params.joblib")
+print("-"*50)
+
+lgbm_hyper_params['scale_pos_weight'] = 13
+lgbm_hyper_params['max_depth'] = -1
+lgbm_hyper_params['random_state'] = 42
+lgbm_hyper_params['n_jobs'] = -1
+
+model = LGBMClassifier(
+    **lgbm_hyper_params
+)
+
+
+model.fit(X_train, y_train)
+
+# ------------ Evaluation --------------
+
+y_prob = model.predict_proba(X_test)[:,1]
+y_pred = model.predict(X_test)
+
+compute_metrics('LGBM', y_test, y_prob, y_pred)
+
+# ------------ XGBoost Method -----------
+# ----------- Training ----------
+model = XGBClassifier(
+    n_estimators=300,
+    max_depth=4,
+    learning_rate=0.05,
+    subsample=0.8,
+    scale_pos_weight=13,
+    random_state=42
+)
+
+model.fit(X_train, y_train)
+
+# ---------- Evaluation -------
+
+y_prob = model.predict_proba(X_test)[:,1]
+y_pred = model.predict(X_test)
+
+auc = roc_auc_score(y_test, y_prob)
+
+print("-"*50)
+compute_metrics('XGBoost', y_test, y_prob, y_pred)
+
+
+# ---------------- Random Forest --------------
+
+# ------------- Training ----------------------
+
+model = RandomForestClassifier(
+    n_estimators=100,
+    max_depth=5,
+    class_weight='balanced',
+    random_state=42
+)
+
+model.fit(X_train, y_train)
+
+# -------------- Evaluating -----------------
+
+yy_prob = model.predict_proba(X_test)[:,1]
+y_pred = model.predict(X_test)
+
+auc = roc_auc_score(y_test, y_prob)
+
+print("-"*50)
+print("Evaluation for Random Forest")
+compute_metrics('Random Forest', y_test, y_prob, y_pred)
+
+
+################
+
+
+
+
+
+
+
+
+
+
+
 
 
 
