@@ -1,0 +1,5 @@
+DATA_RAW = "data/raw/cs-training.csv"
+DATA_CLEAN = "data/processed/data_clean.csv"
+DATA_FEATURES = "data/processed/data_features.csv"
+DATA_TRAIN = "data/processed/train.csv"
+DATA_TEST = "data/processed/test.csv"
