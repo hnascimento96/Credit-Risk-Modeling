@@ -1,4 +1,4 @@
-from src.config import DATA_RAW, SPLIT_TEST, SPLIT_TRAIN 
+from src.config import DATA_RAW, SPLIT_TEST, SPLIT_TRAIN, SPLIT_VAL
 from sklearn.model_selection import train_test_split
 import pandas as pd
 
@@ -71,13 +71,21 @@ if __name__ == "__main__":
 
     credit_data = load_data(credit_data)
 
-    train_df, test_df = train_test_split(
+    train_df, temp_df = train_test_split(
         credit_data,
-        test_size=0.2,
+        test_size=0.3,
         random_state=42,
         stratify=credit_data["Default"]
     )
 
+    val_df, test_df = train_test_split(
+        temp_df,
+        test_size=0.5,
+        random_state=42,
+        stratify=temp_df["Default"]
+    )
+
     train_df.to_csv(SPLIT_TRAIN)
     test_df.to_csv(SPLIT_TEST)
+    val_df.to_csv(SPLIT_VAL)
 
