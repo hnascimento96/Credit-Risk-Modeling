@@ -13,3 +13,11 @@ X_VAL_DIR = "data/processed/Xeval.csv"
 Y_TRAIN_DIR = "data/processed/Ytrain.csv"
 Y_TEST_DIR = "data/processed/Ytest.csv"
 Y_VAL_DIR = "data/processed/Yeval.csv"
+
+PREPROCESSOR_LOG_REG = "models/preprocessor_log_reg.joblib"
+PREPROCESSOR_ENSEMBLE = "models/preprocessor_ensemble.joblib"
+
+MODEL_LOG_REG_DIR = "models/log_reg.joblib"
+MODEL_RANDOM_FOR_DIR = "models/random_forest.joblib"
+
+
