@@ -3,20 +3,29 @@ import numpy as np
 import joblib
 
 from src.config import (
-    X_TRAIN_DIR, X_VAL_DIR, Y_TRAIN_DIR, Y_VAL_DIR,
+    X_TRAIN_DIR, Y_TRAIN_DIR,
     PREPROCESSOR_LOG_REG, PREPROCESSOR_ENSEMBLE,
     MODEL_LOG_REG_DIR, MODEL_RANDOM_FOR_DIR, MODEL_CATBOOST_DIR,
-    MODEL_XGBOOST_DIR
+    MODEL_XGBOOST_DIR, MODEL_LIGHTGBM_DIR
 )
-
-from src.processing import preprocessing
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from catboost import CatBoostClassifier
 from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
 
 def get_data():
+    """
+    Loads the training features and target variable from CSV files.
+
+    Returns
+    -------
+    X_train : pandas.DataFrame
+        Training features indexed by customer ID.
+    y_train : pandas.Series
+        Training target indicating whether a customer defaulted.
+    """
 
     X_train = pd.read_csv(X_TRAIN_DIR, index_col="ID")
 
@@ -26,7 +35,21 @@ def get_data():
     return X_train, y_train
 
 def train_log_reg(X_train, y_train):
+    """
+    Trains a Logistic Regression classifier using the saved preprocessing
+    pipeline and saves the trained model to disk.
 
+    Parameters
+    ----------
+    X_train : pandas.DataFrame
+        Training features containing the original input columns.
+    y_train : pandas.Series
+        Training target indicating whether a customer defaulted.
+
+    Returns
+    -------
+    None
+    """
     # Processing data
     log_reg_processor = joblib.load(PREPROCESSOR_LOG_REG)
     X_train = log_reg_processor.transform(X_train)
@@ -45,6 +68,22 @@ def train_log_reg(X_train, y_train):
     joblib.dump(log_reg_model, MODEL_LOG_REG_DIR)
 
 def train_random_forest(X_train, y_train):
+    """
+    Trains a Random Forest classifier using the saved preprocessing pipeline
+    and saves the trained model to disk.
+
+    Parameters
+    ----------
+    X_train : pandas.DataFrame
+        Training features containing the original input columns.
+    y_train : pandas.Series or pandas.DataFrame
+        Target variable indicating whether a customer defaulted.
+
+    Returns
+    -------
+    None
+    """
+
     # Processing input data
     ensemble_processor = joblib.load(PREPROCESSOR_ENSEMBLE)
     X_train = ensemble_processor.transform(X_train)
@@ -66,6 +105,22 @@ def train_random_forest(X_train, y_train):
     joblib.dump(random_forest_model, MODEL_RANDOM_FOR_DIR)
 
 def train_catboost(X_train, y_train):
+    """
+    Trains a CatBoost classifier using the saved preprocessing pipeline
+    and saves the trained model to disk.
+
+    Parameters
+    ----------
+    X_train : pandas.DataFrame
+        Training features containing the original input columns.
+    y_train : pandas.Series or pandas.DataFrame
+        Target variable indicating whether a customer defaulted.
+
+    Returns
+    -------
+    None
+    """
+
     # Processing input data
     ensemble_processor = joblib.load(PREPROCESSOR_ENSEMBLE)
     X_train = ensemble_processor.transform(X_train)
@@ -127,15 +182,56 @@ def train_xgboost(X_train, y_train):
 
     # Save model
     joblib.dump(xgboost_model, MODEL_XGBOOST_DIR)
+def train_lightgbm(X_train, y_train):
+    """
+    Trains a LightGBM classifier using the saved preprocessing pipeline
+    and saves the trained model to disk.
+
+    Parameters
+    ----------
+    X_train : pandas.DataFrame
+        Training features containing the original input columns.
+    y_train : pandas.Series or pandas.DataFrame
+        Target variable indicating whether a customer defaulted.
+
+    Returns
+    -------
+    None
+    """
+    # Process input data
+    ensemble_processor = joblib.load(PREPROCESSOR_ENSEMBLE)
+    X_train = ensemble_processor.transform(X_train)
+
+    y_train = y_train.squeeze()
+
+    # Initialize model
+    lightgbm_model = LGBMClassifier(
+        n_estimators=200,
+        max_depth=5,
+        learning_rate=0.05,
+        num_leaves=20,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        class_weight="balanced",
+        random_state=42,
+        n_jobs=-1,
+        verbosity=-1
+    )
+
+    # Train model
+    lightgbm_model.fit(X_train, y_train)
+
+    # Save model
+    joblib.dump(lightgbm_model, MODEL_LIGHTGBM_DIR)
 
 if __name__ == "__main__":
     # Gets data from .csv files
     X_train, y_train = get_data()
 
     # Train models
-    #train_log_reg(X_train, y_train)
-    #train_random_forest(X_train, y_train)
-    #train_catboost(X_train, y_train)
-
+    train_log_reg(X_train, y_train)
+    train_random_forest(X_train, y_train)
+    train_catboost(X_train, y_train)
     train_xgboost(X_train, y_train)
+    train_lightgbm(X_train, y_train)
 
