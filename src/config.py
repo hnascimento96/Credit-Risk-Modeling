@@ -19,5 +19,7 @@ PREPROCESSOR_ENSEMBLE = "models/preprocessor_ensemble.joblib"
 
 MODEL_LOG_REG_DIR = "models/log_reg.joblib"
 MODEL_RANDOM_FOR_DIR = "models/random_forest.joblib"
+MODEL_CATBOOST_DIR = "models/catboost.joblib"
+MODEL_XGBOOST_DIR = "models/xgboost.joblib"
 
 
