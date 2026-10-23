@@ -14,7 +14,7 @@ from src.config import(
     X_VAL_DIR, Y_VAL_DIR, 
     PREPROCESSOR_ENSEMBLE, PREPROCESSOR_LOG_REG,
     MODEL_LOG_REG_DIR, MODEL_CATBOOST_DIR, MODEL_RANDOM_FOR_DIR,
-    MODEL_LIGHTGBM_DIR, MODEL_XGBOOST_DIR
+    MODEL_LIGHTGBM_DIR, MODEL_XGBOOST_DIR, MODELS_LIST
 ) 
 
 def evaluate_model(model, X, y, model_name, threshold=0.5):
@@ -85,38 +85,10 @@ def process_data(model, X):
     return X
 
 def get_metrics(X, y):
-    models_list = [
-        {
-            "name" : "Logistic Regression",
-            "type" : "log_reg",
-            "path" : MODEL_LOG_REG_DIR
-        },
-        {
-            "name" : "Random Forest",
-            "type" : "ensemble",
-            "path" : MODEL_RANDOM_FOR_DIR
-        },
-        {
-            "name" : "CatBoost",
-            "type" : "ensemble",
-            "path" : MODEL_CATBOOST_DIR
-        },
-        {
-            "name" : "XGBoost",
-            "type" : "ensemble",
-            "path" : MODEL_XGBOOST_DIR
-        },
-        {
-            "name" : "LightGBM",
-            "type" : "ensemble",
-            "path" : MODEL_LIGHTGBM_DIR
-        },
-    ]
-    
     results = []
 
     # Train metrics
-    for model in models_list:
+    for model in MODELS_LIST:
         X_processed = process_data(model["type"], X)
 
         # Evaluates model

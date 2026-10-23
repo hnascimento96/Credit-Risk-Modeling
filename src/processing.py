@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from src.config import X_TRAIN_DIR, X_VAL_DIR, X_TEST_DIR
+from src.config import X_TRAIN_DIR, X_VAL_DIR, X_TEST_DIR, PREPROCESSOR_ENSEMBLE, PREPROCESSOR_LOG_REG
 from src.feature_creation import FeatureCreation
 
 import joblib
@@ -62,6 +62,23 @@ def preprocessing(model, X_train, X_test, X_val):
     X_test = preprocessor_pipeline.transform(X_test)
 
     joblib.dump(preprocessor_pipeline, f"models/preprocessor_{model}.joblib")
+
+def process_data(model, X):
+
+    if model not in ("log_reg", "ensemble"):
+        raise ValueError(
+            f"Invalid model name {model!r}. Valid names are 'log_reg', 'ensemble'"
+        )
+
+    preprocessor_dir = {
+        "log_reg" : PREPROCESSOR_LOG_REG,
+        "ensemble" : PREPROCESSOR_ENSEMBLE
+    }
+
+    processor = joblib.load(preprocessor_dir[model])
+    X = processor.transform(X)
+
+    return X
 
 
 if __name__ == "__main__":
