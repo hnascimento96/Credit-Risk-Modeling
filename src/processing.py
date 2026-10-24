@@ -9,7 +9,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from src.config import X_TRAIN_DIR, X_VAL_DIR, X_TEST_DIR, PREPROCESSOR_ENSEMBLE, PREPROCESSOR_LOG_REG
+from src.config import(
+    X_TRAIN_DIR, X_VAL_DIR, X_TEST_DIR,
+    PREPROCESSOR_ENSEMBLE, PREPROCESSOR_LOG_REG
+    )
+
 from src.feature_creation import FeatureCreation
 
 import joblib

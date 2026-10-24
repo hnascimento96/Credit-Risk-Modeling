@@ -25,6 +25,34 @@ MODEL_CATBOOST_DIR = "models/catboost.joblib"
 MODEL_XGBOOST_DIR = "models/xgboost.joblib"
 MODEL_LIGHTGBM_DIR = "models/lightgbm.joblib"
 
+MODELS = {
+    "log_reg": {
+        "name" : "Logistic Regression",
+        "type" : "log_reg",
+        "path" : MODEL_LOG_REG_DIR
+    },
+    "random_forest" : {
+        "name" : "Random Forest",
+        "type" : "ensemble",
+        "path" : MODEL_RANDOM_FOR_DIR
+    },
+    "catboost" : {
+        "name" : "CatBoost",
+        "type" : "ensemble",
+        "path" : MODEL_CATBOOST_DIR
+    },
+    "xgboost" : {
+        "name" : "XGBoost",
+        "type" : "ensemble",
+        "path" : MODEL_XGBOOST_DIR
+    },
+    "lightgbm" : {
+        "name" : "LightGBM",
+        "type" : "ensemble",
+        "path" : MODEL_LIGHTGBM_DIR
+    }
+}
+
 MODELS_LIST = [
     {
         "name" : "Logistic Regression",
@@ -53,6 +81,34 @@ MODELS_LIST = [
     },
 ]
 
-CALIBRATION_DIR = Path("calibration/fig")
+CALIBRATION_DIR = Path("calibration")
+
+MODELS_CALIBRATED = {
+    "log_reg": {
+        "name" : "Logistic Regression",
+        "type" : "log_reg",
+        "path" : CALIBRATION_DIR / "calibrated_model_Logistic Regression.joblib"
+    },
+    "random_forest" : {
+        "name" : "Random Forest",
+        "type" : "ensemble",
+        "path" : CALIBRATION_DIR / "calibrated_model_Random Forest.joblib"
+    },
+    "catboost" : {
+        "name" : "CatBoost",
+        "type" : "ensemble",
+        "path" : CALIBRATION_DIR / "calibrated_model_CatBoost.joblib"
+    },
+    "xgboost" : {
+        "name" : "XGBoost",
+        "type" : "ensemble",
+        "path" : CALIBRATION_DIR / "calibrated_model_XGBoost.joblib"
+    },
+    "lightgbm" : {
+        "name" : "LightGBM",
+        "type" : "ensemble",
+        "path" : CALIBRATION_DIR / "calibrated_model_LightGBM.joblib"
+    }
+}
 
 

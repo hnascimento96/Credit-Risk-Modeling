@@ -17,6 +17,15 @@ from src.config import(
     MODEL_LIGHTGBM_DIR, MODEL_XGBOOST_DIR, MODELS_LIST
 ) 
 
+def brier_score(y_pred, y_obs):
+
+    y_pred = np.asarray(y_pred)
+    y_obs = np.asarray(y_obs)
+
+    bs = np.mean((y_pred - y_obs)**2)
+
+    return bs
+
 def evaluate_model(model, X, y, model_name, threshold=0.5):
     """
     Evaluates a binary classification model using ROC-AUC, precision,
@@ -42,14 +51,9 @@ def evaluate_model(model, X, y, model_name, threshold=0.5):
     """
     # Predicted probabilities and classes
     y_prob = model.predict_proba(X)[:, 1]
-    y_pred = (y_prob >= threshold).astype(int)
 
     # ROC-AUC
     roc_auc = roc_auc_score(y, y_prob)
-
-    # Precision and Recall
-    precision = precision_score(y, y_pred, zero_division=0)
-    recall = recall_score(y, y_pred, zero_division=0)
 
     # KS statistic
     fpr, tpr, _ = roc_curve(y, y_prob)
@@ -58,13 +62,15 @@ def evaluate_model(model, X, y, model_name, threshold=0.5):
     # Gini coefficient
     gini = 2 * roc_auc - 1
 
+    # Brier score
+    brier_sc = brier_score(y_prob, y)
+
     return {
         "Model": model_name,
         "ROC-AUC": roc_auc,
-        "Precision": precision,
-        "Recall": recall,
         "KS": ks,
-        "Gini": gini
+        "Gini": gini,
+        "Brier score" : brier_sc
     }
 
 def process_data(model, X):

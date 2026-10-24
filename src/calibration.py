@@ -7,14 +7,19 @@ import math
 
 from pathlib import Path
 from src.config import(
-    X_VAL_DIR, Y_VAL_DIR, 
+    X_VAL_DIR, Y_VAL_DIR,
+    X_TEST_DIR, Y_TEST_DIR,
     PREPROCESSOR_ENSEMBLE, PREPROCESSOR_LOG_REG,
     MODEL_LOG_REG_DIR, MODEL_CATBOOST_DIR, MODEL_RANDOM_FOR_DIR,
     MODEL_LIGHTGBM_DIR, MODEL_XGBOOST_DIR,
-    MODELS_LIST, CALIBRATION_DIR
+    MODELS, CALIBRATION_DIR
 )
 
 from src.processing import process_data
+from src.evaluation import evaluate_model
+
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.frozen import FrozenEstimator
 
 def decile_analysis(model_name, y_pred, y_obs, calibrated):
 
@@ -28,13 +33,14 @@ def decile_analysis(model_name, y_pred, y_obs, calibrated):
         True : "calibrated"
     }
 
-    save_path = CALIBRATION_DIR / f"{calibration_status[calibrated]}" / f"{model_name}.png"
+    save_path = CALIBRATION_DIR / f"fig/{calibration_status[calibrated]}" / f"{model_name}.png"
 
     y = {"y_pred" : y_pred, "y_obs" : y_obs}
 
     y_df = pd.DataFrame(y)
 
     # Get deciles (drops empty intervals)
+
     y_df["decile"] = pd.qcut(y_df["y_pred"], 
                             q=10, labels=False, duplicates="drop")
 
@@ -42,42 +48,75 @@ def decile_analysis(model_name, y_pred, y_obs, calibrated):
     mean["y_pred"] = y_df.groupby("decile")["y_pred"].mean()
     mean["y_obs"] = y_df.groupby("decile")["y_obs"].mean()
 
-    # Observed-to-expected ratio
-    mean["oe_ratio"] = mean["y_obs"]/mean["y_pred"]
+    deciles = np.arange(len(mean["y_pred"]))
+
+    # Observed-to-predicted ratio
+    mean["op_ratio"] = mean["y_obs"]/mean["y_pred"]
 
     mean_df = pd.DataFrame(mean)
 
+    # plt.figure()
+    # plt.plot(mean["y_obs"], mean["y_obs"], color="gray", label="Perfect calibration")
+    # plt.plot(mean["y_obs"], mean["y_pred"], color="red", label="Model curve")
+    # plt.xlabel("Observed quantile")
+    # plt.ylabel("Predicted quantile")
+    # plt.title(f"{model_name} calibration curve ({calibration_status[calibrated]})")
+    # plt.legend()
+
+    # Plots bar mean predicted values bar graph 
     plt.figure()
-    plt.plot(mean["y_obs"], mean["y_obs"], color="gray", label="Perfect calibration")
-    plt.plot(mean["y_obs"], mean["y_pred"], color="red", label="Model curve")
-    plt.xlabel("Observed quantile")
-    plt.ylabel("Predicted quantile")
-    plt.title(f"{model_name} calibration curve ({calibration_status[calibrated]})")
+    plt.bar(deciles, mean["y_pred"]*100, label="Predicted default rate")
+    plt.xticks(deciles)
+    plt.xlabel("PD deciles")
+    plt.ylabel("Default rate (%)")
+
+    # Plots observed rate graph
+    plt.plot(deciles, mean["y_obs"]*100, color="firebrick", marker="o",
+             markersize=9,
+             label="Observed rate"
+             )
+
+    plt.title(f"{model_name} default rate by decile ({calibration_status[calibrated]})")
+    
     plt.legend()
+    plt.savefig(save_path)
     
 
-    plt.savefig(save_path)
-    plt.close()
+    #print(mean_df)
 
-    print(mean_df)
+def evaluate_calibration(model, model_name, X, y, calibrated=False):
+    """
+    Evaluates a trained model using predicted probabilities and performs
+    decile analysis.
 
+    Parameters
+    ----------
+    model_config : dict
+        Dictionary containing the model's name, type, and file path.
+    X : pandas.DataFrame
+        Input features.
+    y : pandas.Series
+        Observed target values.
+    calibrated : bool, default=False
+        Indicates whether the model is calibrated.
 
+    Returns
+    -------
+    None
+    """
+    y_pred = model.predict_proba(X)[:, 1]
 
-def calibration_analysis(calibrated, model_params):
+    # print("-" * 100)
+    # print("Statistics")
+    # print(f"model_name: {model_name}")
 
-    X_val_raw = pd.read_csv(X_VAL_DIR, index_col="ID")
-    y_val = pd.read_csv(Y_VAL_DIR, index_col="ID").squeeze("columns")
+    decile_analysis(
+        model_name=model_name,
+        y_obs=y,
+        y_pred=y_pred,
+        calibrated=calibrated
+    )
 
-    X_val = process_data(model_params["type"], X_val_raw)
-    model = joblib.load(model_params["path"])
-    y_val_pred = model.predict_proba(X_val)[:,1]
-
-
-    print("-"*100)
-    print("Statistics")
-    print(f"model_name: {model_params["name"]}")
-    decile_analysis(model_name=model_params["name"], y_obs=y_val, y_pred=y_val_pred,
-                    calibrated=calibrated)
 
 def combine_figures(input_dir: str | Path, output_path: str | Path, n_cols: int = 3) -> Path:
     """Combine all PNG images in a folder into a single grid figure."""
@@ -106,12 +145,119 @@ def combine_figures(input_dir: str | Path, output_path: str | Path, n_cols: int 
 
     return output_path
 
+def calibrate_model(model):
+
+    calibrated_model = CalibratedClassifierCV(
+        estimator=FrozenEstimator(model),
+        method="sigmoid"
+    )
+
+    joblib.dump(calibrated_model, CALIBRATION_DIR / f"calibrated_model_{model_config["name"]}.joblib")
+
+    return calibrated_model
+
 if __name__ == "__main__":
 
-    for model in MODELS_LIST:
-        calibration_analysis(calibrated=False, model_params=model)
+    X_val = pd.read_csv(X_VAL_DIR, index_col="ID")
+    y_val = pd.read_csv(Y_VAL_DIR, index_col="ID").squeeze("columns")
+
+    X_test = pd.read_csv(X_TEST_DIR, index_col="ID")
+    y_test = pd.read_csv(Y_TEST_DIR, index_col="ID").squeeze("columns") 
 
 
-    combine_figures(input_dir=CALIBRATION_DIR / "raw",
-                    output_path=CALIBRATION_DIR / "raw_merged")
-    plt.show()
+    # Evaluate 'raw' models on validation set
+    results = []
+
+    print("-" * 100)
+    print("Uncalibrated model analysis (validation set)")
+    for model_config in MODELS.values():
+        X_val_processed = process_data(model=model_config["type"], X=X_val)
+
+        model = joblib.load(model_config["path"])
+
+        evaluate_calibration(model=model,
+                             model_name=model_config["name"],
+                             X=X_val_processed,
+                             y=y_val,
+                             calibrated=False
+                             )
+        result = evaluate_model(model=model,
+                               X=X_val_processed,
+                               y=y_val,
+                               model_name=model_config["name"]
+                               )
+        
+        results.append(result)
+
+    print("-" * 100)
+    print(pd.DataFrame(results))
+
+    # Evaluate uncalibrated models on test set
+    results = []
+
+    print("-" * 100)
+    for model_config in MODELS.values():
+        X_test_processed = process_data(model=model_config["type"], X=X_test)
+
+        model = joblib.load(model_config["path"])
+
+        evaluate_calibration(model=model,
+                                model_name=model_config["name"],
+                                X=X_test_processed,
+                                y=y_test,
+                                calibrated=False
+                                )
+        result = evaluate_model(model=model,
+                                X=X_test_processed,
+                                y=y_test,
+                                model_name=model_config["name"]
+                                )
+        
+        results.append(result)
+
+    print(f"Uncalibrated model metrics (test set)")
+    print("-" * 100)
+    print(pd.DataFrame(results))
+        
+
+    # Evaluates 'calibrated' models on test set
+    results = []
+
+    for model_config in MODELS.values():
+        X_val_processed = process_data(model=model_config["type"], X=X_val)
+
+        model = joblib.load(model_config["path"])
+        calibrated_model = calibrate_model(model=model)
+        calibrated_model.fit(X_val_processed, y_val)
+
+        X_test_processed = process_data(model=model_config["type"], X=X_test)
+        
+        result = evaluate_model(model=calibrated_model,
+                       X=X_test_processed,
+                       y=y_test,
+                       model_name=model_config["name"]
+                       )
+
+        evaluate_calibration(model=calibrated_model,
+                            model_name=model_config["name"],
+                            X=X_test_processed,
+                            y=y_test,
+                            calibrated=True
+                            )
+
+        results.append(result)
+
+        y_pred = calibrated_model.predict_proba(X_test_processed)[:, 1]
+
+
+    print("-" * 100)
+    print(f"Calibrated model metrics (test set)")
+    print("-" * 100)
+    print(pd.DataFrame(results))
+
+    combine_figures(input_dir=CALIBRATION_DIR / "fig/raw",
+                    output_path=CALIBRATION_DIR / "fig/raw_merged")
+
+    combine_figures(input_dir=CALIBRATION_DIR / "fig/calibrated",
+                    output_path=CALIBRATION_DIR / "fig/calibrated_merged")
+    #plt.show()
