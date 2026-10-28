@@ -73,37 +73,3 @@ def scenario_analysis(y_prob, y, lim):
                }
 
     return metrics
-
-
-if __name__ == "__main__":
-
-    thresholds = [0.05, 0.1, 0.15, 0.20, 0.30, 0.4, 0.5]
-
-    X_val = pd.read_csv(X_VAL_DIR, index_col="ID")
-    y_val = pd.read_csv(Y_VAL_DIR, index_col="ID").squeeze("columns")
-
-    model_config = MODELS_CALIBRATED["lightgbm"]
-
-    X_val_processed = process_data(model=model_config["type"],
-                                   X=X_val)
-
-    model = joblib.load(model_config["path"])
-    y_pred = model.predict_proba(X_val_processed)[:,1]
-
-    print("-"*100)
-    print("Scenario analysis")
-    print("-"*100)
-
-    metrics = []
-    for threshold in thresholds:
-
-        metrics.append(scenario_analysis(y_prob=y_pred, y=y_val, lim=threshold))
-
-    metrics_df = pd.DataFrame(metrics)
-
-    metrics_df.to_csv(CREDIT_POLICY_DIR / "policy_comparison.csv", index=False)
-
-    print(metrics_df)
-
-    #print("y_pred:")
-    #print(y_pred[:10])
