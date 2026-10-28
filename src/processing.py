@@ -67,6 +67,26 @@ def preprocessing(model, X_train, X_test, X_val):
 
     joblib.dump(preprocessor_pipeline, f"models/preprocessor_{model}.joblib")
 
+def to_feature_frame(X, index):
+    columns = [
+        'Util',
+        'Age',
+        'Late30_59',
+        'Debt',
+        'Income',
+        'OpenCred',
+        'Late90',
+        'RealEstate',
+        'Late60_89',
+        'AnyLate',
+        'TotalLate',
+        'LateScore',
+        'UtilAbove100',
+        'No.Dep',
+    ]
+
+    return pd.DataFrame(data=X, columns=columns, index=index)
+
 def process_data(model, X):
 
     if model not in ("log_reg", "ensemble"):
@@ -83,6 +103,8 @@ def process_data(model, X):
     X = processor.transform(X)
 
     return X
+
+
 
 
 if __name__ == "__main__":
