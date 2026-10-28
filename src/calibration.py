@@ -145,12 +145,14 @@ def combine_figures(input_dir: str | Path, output_path: str | Path, n_cols: int 
 
     return output_path
 
-def calibrate_model(model):
+def calibrate_model(model, X, y):
 
     calibrated_model = CalibratedClassifierCV(
         estimator=FrozenEstimator(model),
         method="sigmoid"
     )
+
+    calibrated_model.fit(X, y)
 
     joblib.dump(calibrated_model, CALIBRATION_DIR / f"calibrated_model_{model_config["name"]}.joblib")
 
@@ -227,8 +229,7 @@ if __name__ == "__main__":
         X_val_processed = process_data(model=model_config["type"], X=X_val)
 
         model = joblib.load(model_config["path"])
-        calibrated_model = calibrate_model(model=model)
-        calibrated_model.fit(X_val_processed, y_val)
+        calibrated_model = calibrate_model(model=model, X=X_val_processed, y=y_val)
 
         X_test_processed = process_data(model=model_config["type"], X=X_test)
         
