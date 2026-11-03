@@ -11,6 +11,10 @@ SPECIAL_CODES = [96, 98]
 # Util above this value is treated as a data error (see EDA)
 UTIL_LIMIT = 10
 
+# Income at or below this value is not usable: Debt (debt / income) then
+# holds the debt amount instead of a ratio
+INCOME_MIN = 1
+
 
 def check_dataframe(X, step_name):
     """
@@ -40,8 +44,14 @@ class DataCleaning(BaseEstimator, TransformerMixin):
       - invalid Util does not enter UtilAbove100.
 
     Treatments:
-      - IncomeMissing: 1 if Income is NaN. Income itself stays NaN and is
-        filled later by the median imputer.
+      - IncomeMissing: 1 if there is no usable income, i.e. Income is NaN
+        or Income <= INCOME_MIN (0 or 1). In these rows Debt holds the debt
+        amount, not the debt-to-income ratio, so Debt is replaced by NaN and
+        the median imputer fills it with the train median ratio (computed
+        only on rows with usable income). This keeps Debt a ratio for every
+        client; the flag carries the risk of having no usable income.
+        Income itself is not changed here: NaN is filled later by the median
+        imputer, and 0 or 1 is kept.
       - SpecialCode: 1 if any late-payment column has code 96 or 98.
         The codes are replaced by NaN, so the median imputer fills them with
         the train median of each column (computed without the codes).
@@ -51,7 +61,7 @@ class DataCleaning(BaseEstimator, TransformerMixin):
         to the typical client, not to the 1 < Util <= 10 group (~39%), so the
         median is a better stand-in than a cap; the flag adjusts the rest.
 
-    Input: DataFrame containing at least Util, Income and the LATE_COLS.
+    Input: DataFrame containing at least Util, Income, Debt and the LATE_COLS.
     Output: the same DataFrame (cleaned) plus the columns IncomeMissing,
             SpecialCode and UtilInvalid.
     """
@@ -92,8 +102,12 @@ class DataCleaning(BaseEstimator, TransformerMixin):
         # Float is needed because integer columns cannot hold NaN.
         X = X.astype(float)
 
-        # IncomeMissing: created before any imputation
-        X["IncomeMissing"] = X["Income"].isna().astype(int)
+        # IncomeMissing: no usable income (NaN, 0 or 1), created before any
+        # imputation. In these rows Debt is an amount, not a ratio, so it is
+        # replaced by NaN (imputed later by the median ratio)
+        no_income = X["Income"].isna() | (X["Income"] <= INCOME_MIN)
+        X["IncomeMissing"] = no_income.astype(int)
+        X["Debt"] = X["Debt"].mask(no_income)
 
         # SpecialCode: flag rows with 96/98 in any late-payment column,
         # then replace the codes by NaN (imputed later by the median)

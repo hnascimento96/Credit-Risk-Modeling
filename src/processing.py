@@ -11,7 +11,8 @@ Two model types share the same steps; they differ only in the scaling:
 Order of the steps (it matters):
   1. Original numeric features (median branch):
        DataCleaning   -> flags IncomeMissing, SpecialCode, UtilInvalid;
-                         codes 96/98 and Util > 10 become NaN.
+                         codes 96/98, Util > 10 and Debt without usable
+                         income (Income NaN, 0 or 1) become NaN.
        SimpleImputer  -> fills NaN with the train median.
        FeatureCreation-> AnyLate, TotalLate, LateScore, UtilAbove100.
        Scaler         -> only for 'log_reg'.
