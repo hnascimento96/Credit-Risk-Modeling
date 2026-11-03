@@ -1,25 +1,28 @@
-
 import pandas as pd
-import numpy as np
-from pathlib import Path
 
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
-from sklearn.base import BaseEstimator, TransformerMixin
 
 from src.config import(
-    X_TRAIN_DIR, X_VAL_DIR, X_TEST_DIR,
+    X_TRAIN_DIR,
     PREPROCESSOR_ENSEMBLE, PREPROCESSOR_LOG_REG
     )
 
-from src.feature_creation import FeatureCreation
+from src.feature_creation import DataCleaning, FeatureCreation
 
 import joblib
-        
 
-def preprocessing(model, X_train, X_test, X_val):
+
+# Path of the saved preprocessor of each model type
+PREPROCESSOR_DIR = {
+    "log_reg": PREPROCESSOR_LOG_REG,
+    "ensemble": PREPROCESSOR_ENSEMBLE,
+}
+
+
+def preprocessing(model, X_train):
 
     if model not in ("log_reg", "ensemble"):
         raise ValueError(
@@ -28,15 +31,15 @@ def preprocessing(model, X_train, X_test, X_val):
         )
 
     median_features = [
-        "Util",             # Col. No. 0
-        "Age",              # Col. No. 1
-        "Late30_59",        # Col. No. 2
-        "Debt",             # Col. No. 3
-        "Income",           # Col. No. 4
-        "OpenCred",         # Col. No. 5
-        "Late90",           # Col. No. 6
-        "RealEstate",       # Col. No. 7
-        "Late60_89",        # Col. No. 8
+        "Util",
+        "Age",
+        "Late30_59",
+        "Debt",
+        "Income",
+        "OpenCred",
+        "Late90",
+        "RealEstate",
+        "Late60_89",
     ]
 
     # 'passthrough' indicates to 'Pipeline' that a step must be ignored
@@ -47,45 +50,34 @@ def preprocessing(model, X_train, X_test, X_val):
             ("scaler", scaler)
     ])
 
+    # Order matters: cleaning (flags, codes 96/98, invalid Util) must run
+    # before the imputer and before the derived features
     median_pipeline = Pipeline([
+            ("cleaning", DataCleaning()),
             ("imputer", SimpleImputer(strategy="median")),
             ("feature_creater", FeatureCreation()),
             ("scaler", scaler)
-    ])    
-        
+    ])
+
+    # verbose_feature_names_out=False keeps the plain column names
+    # (e.g. 'Util' instead of 'median_pipeline__Util')
     preprocessor_pipeline = ColumnTransformer(
         [
             ("median_pipeline", median_pipeline, median_features),
             ("mode_pipeline", mode_pipeline, ["No.Dep"])
-        ]
+        ],
+        verbose_feature_names_out=False,
     )
 
-    X_train = preprocessor_pipeline.fit_transform(X_train)
+    # Output as DataFrame, with column names and the original index
+    preprocessor_pipeline.set_output(transform="pandas")
 
-    X_val = preprocessor_pipeline.transform(X_val)
-    X_test = preprocessor_pipeline.transform(X_test)
+    # All statistics (medians, mode, max valid Util, scaler) come from
+    # the train set only
+    preprocessor_pipeline.fit(X_train)
 
-    joblib.dump(preprocessor_pipeline, f"models/preprocessor_{model}.joblib")
+    joblib.dump(preprocessor_pipeline, PREPROCESSOR_DIR[model])
 
-def to_feature_frame(X, index):
-    columns = [
-        'Util',
-        'Age',
-        'Late30_59',
-        'Debt',
-        'Income',
-        'OpenCred',
-        'Late90',
-        'RealEstate',
-        'Late60_89',
-        'AnyLate',
-        'TotalLate',
-        'LateScore',
-        'UtilAbove100',
-        'No.Dep',
-    ]
-
-    return pd.DataFrame(data=X, columns=columns, index=index)
 
 def process_data(model, X):
 
@@ -94,34 +86,15 @@ def process_data(model, X):
             f"Invalid model name {model!r}. Valid names are 'log_reg', 'ensemble'"
         )
 
-    preprocessor_dir = {
-        "log_reg" : PREPROCESSOR_LOG_REG,
-        "ensemble" : PREPROCESSOR_ENSEMBLE
-    }
-
-    processor = joblib.load(preprocessor_dir[model])
+    processor = joblib.load(PREPROCESSOR_DIR[model])
     X = processor.transform(X)
 
     return X
 
 
-
-
 if __name__ == "__main__":
 
-    X_dfs = []
-    dirs = [X_TRAIN_DIR, X_VAL_DIR, X_TEST_DIR]
+    X_train = pd.read_csv(X_TRAIN_DIR, index_col="ID")
 
-    for dir in dirs:
-        df = pd.read_csv(dir, index_col="ID")
-        X_dfs.append(df)
-
-    preprocessing(model='log_reg',
-                  X_train=X_dfs[0],
-                  X_val=X_dfs[1],
-                  X_test=X_dfs[2])
-
-    preprocessing(model='ensemble',
-                      X_train=X_dfs[0],
-                      X_val=X_dfs[1],
-                      X_test=X_dfs[2])
+    preprocessing(model="log_reg", X_train=X_train)
+    preprocessing(model="ensemble", X_train=X_train)
