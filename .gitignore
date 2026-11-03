@@ -1,0 +1,15 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Package metadata created by "pip install -e ."
+*.egg-info/
+
+# Virtual environment
+.venv/
+
+# Jupyter autosave
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
