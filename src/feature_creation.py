@@ -45,8 +45,11 @@ class DataCleaning(BaseEstimator, TransformerMixin):
       - SpecialCode: 1 if any late-payment column has code 96 or 98.
         The codes are replaced by NaN, so the median imputer fills them with
         the train median of each column (computed without the codes).
-      - UtilInvalid: 1 if Util > UTIL_LIMIT. These values are replaced by the
-        largest valid Util (<= UTIL_LIMIT) seen in the train set.
+      - UtilInvalid: 1 if Util > UTIL_LIMIT. These values are replaced by
+        NaN, so the median imputer fills them with the train median of Util
+        (computed without them). The real risk of this group (~10%) is close
+        to the typical client, not to the 1 < Util <= 10 group (~39%), so the
+        median is a better stand-in than a cap; the flag adjusts the rest.
 
     Input: DataFrame containing at least Util, Income and the LATE_COLS.
     Output: the same DataFrame (cleaned) plus the columns IncomeMissing,
@@ -57,30 +60,25 @@ class DataCleaning(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         """
-        Learns the largest valid Util from the train set.
+        Nothing to learn (the medians are learned by the imputer that comes
+        next); only stores the input column names.
 
         Args:
             X: train DataFrame.
             y: ignored; kept for sklearn compatibility.
 
         Returns:
-            self, with:
-              - feature_names_in_: input column names;
-              - n_features_in_: number of input columns;
-              - util_max_: largest Util <= UTIL_LIMIT in the train set.
+            self, with feature_names_in_ and n_features_in_.
         """
         check_dataframe(X, "DataCleaning")
         self.feature_names_in_ = np.array(X.columns, dtype=object)
         self.n_features_in_ = X.shape[1]
 
-        util = X["Util"]
-        self.util_max_ = util[util <= UTIL_LIMIT].max()
-
         return self
 
     def transform(self, X):
         """
-        Applies the flags and replacements learned in 'fit'.
+        Creates the flags and replaces the invalid values by NaN.
 
         Args:
             X: DataFrame to transform (same columns as in 'fit').
@@ -91,8 +89,7 @@ class DataCleaning(BaseEstimator, TransformerMixin):
         check_dataframe(X, "DataCleaning")
 
         # astype returns a copy, so the original data is never changed.
-        # Float is needed because integer columns cannot hold NaN or the
-        # Util cap (e.g. 9.5).
+        # Float is needed because integer columns cannot hold NaN.
         X = X.astype(float)
 
         # IncomeMissing: created before any imputation
@@ -104,10 +101,11 @@ class DataCleaning(BaseEstimator, TransformerMixin):
         X["SpecialCode"] = is_code.any(axis=1).astype(int)
         X[LATE_COLS] = X[LATE_COLS].mask(is_code)
 
-        # UtilInvalid: flag Util > UTIL_LIMIT and cap it at the train maximum
+        # UtilInvalid: flag Util > UTIL_LIMIT, then replace it by NaN
+        # (imputed later by the median, like the codes 96/98)
         util_invalid = X["Util"] > UTIL_LIMIT
         X["UtilInvalid"] = util_invalid.astype(int)
-        X.loc[util_invalid, "Util"] = self.util_max_
+        X["Util"] = X["Util"].mask(util_invalid)
 
         return X
 

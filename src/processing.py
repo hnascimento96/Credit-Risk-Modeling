@@ -11,7 +11,7 @@ Two model types share the same steps; they differ only in the scaling:
 Order of the steps (it matters):
   1. Original numeric features (median branch):
        DataCleaning   -> flags IncomeMissing, SpecialCode, UtilInvalid;
-                         codes 96/98 become NaN; Util > 10 is capped.
+                         codes 96/98 and Util > 10 become NaN.
        SimpleImputer  -> fills NaN with the train median.
        FeatureCreation-> AnyLate, TotalLate, LateScore, UtilAbove100.
        Scaler         -> only for 'log_reg'.
@@ -20,7 +20,7 @@ Order of the steps (it matters):
      the derived features.
   2. No.Dep (mode branch): SimpleImputer with the most frequent value -> Scaler.
 
-All statistics (medians, mode, max valid Util, scaler) are learned from the
+All statistics (medians, mode, scaler) are learned from the
 train set only and then applied unchanged to validation and test data.
 
 The output is a DataFrame with named columns and the original index.
@@ -126,7 +126,7 @@ def preprocessing(model, X_train):
     # Output as DataFrame, with column names and the original index
     preprocessor_pipeline.set_output(transform="pandas")
 
-    # All statistics (medians, mode, max valid Util, scaler) come from
+    # All statistics (medians, mode, scaler) come from
     # the train set only
     preprocessor_pipeline.fit(X_train)
 
