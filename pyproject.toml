@@ -7,14 +7,20 @@ build-backend = "setuptools.build_meta"
 name = "credit-risk-modeling"
 version = "0.1.0"
 description = "Probability of Default modeling for credit risk"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "numpy",
     "pandas",
+    "scipy",
     "matplotlib",
+    "seaborn",
     "scikit-learn",
+    "joblib",
+    "xgboost",
+    "lightgbm",
+    "catboost",
+    "shap",
     "jupyter",
-    "shap"
 ]
 
 [tool.setuptools.packages.find]
