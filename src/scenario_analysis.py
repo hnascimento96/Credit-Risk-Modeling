@@ -1,13 +1,32 @@
 import pandas as pd
 import numpy as np
-import joblib
-
-from src.config import (
-    X_VAL_DIR, Y_VAL_DIR, MODELS_CALIBRATED, CREDIT_POLICY_DIR
-)
-from src.processing import process_data
 
 def scenario_analysis(y_prob, y, lim):
+    """
+    Simulates a credit policy that approves a customer when the predicted
+    PD is less than or equal to a threshold, and computes its metrics.
+
+    Parameters
+    ----------
+    y_prob : numpy.ndarray
+        Predicted probabilities of default (calibrated PDs).
+    y : pandas.Series
+        Observed target (1 = default), in the same row order as y_prob.
+    lim : float
+        PD threshold: customers with y_prob <= lim are approved.
+
+    Returns
+    -------
+    dict
+        Policy metrics, rounded to 4 decimals:
+        - threshold: the PD threshold (lim);
+        - acceptance_rate / rejection_rate: share of customers approved / rejected;
+        - approved_mean_pd: mean predicted PD among approved (expected risk);
+        - default_approved_rate: actual default rate among approved (realized risk);
+        - default_rejected_rate: actual default rate among rejected;
+        - default_captured_rate: share of all defaults that were rejected;
+        - non_default_rejected_rate: share of good payers that were rejected.
+    """
 
     y_df = pd.DataFrame({"y_prob" : y_prob, "default" : y})
 
