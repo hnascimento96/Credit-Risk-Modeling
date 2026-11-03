@@ -12,7 +12,7 @@ from src.config import(
     PREPROCESSOR_ENSEMBLE, PREPROCESSOR_LOG_REG,
     MODEL_LOG_REG_DIR, MODEL_CATBOOST_DIR, MODEL_RANDOM_FOR_DIR,
     MODEL_LIGHTGBM_DIR, MODEL_XGBOOST_DIR,
-    MODELS, CALIBRATION_DIR
+    MODELS, CALIBRATION_DIR, METRICS_DIR
 )
 
 from src.processing import process_data
@@ -91,8 +91,10 @@ def evaluate_calibration(model, model_name, X, y, calibrated=False):
 
     Parameters
     ----------
-    model_config : dict
-        Dictionary containing the model's name, type, and file path.
+    model : estimator
+        Trained model (raw or calibrated) with predict_proba().
+    model_name : str
+        Model name, used in the plot title and in the saved file name.
     X : pandas.DataFrame
         Input features.
     y : pandas.Series
@@ -212,8 +214,10 @@ if __name__ == "__main__":
         
         results.append(result)
 
+    raw_val_df = pd.DataFrame(results)
+
     print("-" * 100)
-    print(pd.DataFrame(results))
+    print(raw_val_df)
 
     # Evaluate uncalibrated models on test set
     results = []
@@ -238,9 +242,11 @@ if __name__ == "__main__":
         
         results.append(result)
 
+    raw_test_df = pd.DataFrame(results)
+
     print(f"Uncalibrated model metrics (test set)")
     print("-" * 100)
-    print(pd.DataFrame(results))
+    print(raw_test_df)
         
 
     # Evaluates 'calibrated' models on test set
@@ -276,9 +282,17 @@ if __name__ == "__main__":
 
 
     print("-" * 100)
+    calibrated_test_df = pd.DataFrame(results)
+
     print(f"Calibrated model metrics (test set)")
     print("-" * 100)
-    print(pd.DataFrame(results))
+    print(calibrated_test_df)
+
+    # Save metrics, so versions can be compared later
+    METRICS_DIR.mkdir(parents=True, exist_ok=True)
+    raw_val_df.to_csv(METRICS_DIR / "uncalibrated_validation_metrics.csv", index=False)
+    raw_test_df.to_csv(METRICS_DIR / "uncalibrated_test_metrics.csv", index=False)
+    calibrated_test_df.to_csv(METRICS_DIR / "calibrated_test_metrics.csv", index=False)
 
     combine_figures(input_dir=CALIBRATION_DIR / "fig/raw",
                     output_path=CALIBRATION_DIR / "fig/raw_merged")
