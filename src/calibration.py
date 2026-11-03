@@ -145,8 +145,22 @@ def combine_figures(input_dir: str | Path, output_path: str | Path, n_cols: int 
 
     return output_path
 
-def calibrate_model(model, X, y):
+def calibrate_model(model, model_name, X, y):
+    """
+    Calibrates a trained model with Platt scaling (sigmoid) and saves it.
 
+    The original model is frozen: only the calibration layer is fitted.
+
+    Args:
+        model: trained model with predict_proba().
+        model_name: model name, used in the saved file name
+                    (e.g. 'XGBoost' -> calibrated_model_XGBoost.joblib).
+        X: processed features used to fit the calibration (validation set).
+        y: observed target for X.
+
+    Returns:
+        The calibrated model.
+    """
     calibrated_model = CalibratedClassifierCV(
         estimator=FrozenEstimator(model),
         method="sigmoid"
@@ -154,7 +168,7 @@ def calibrate_model(model, X, y):
 
     calibrated_model.fit(X, y)
 
-    joblib.dump(calibrated_model, CALIBRATION_DIR / f"calibrated_model_{model_config["name"]}.joblib")
+    joblib.dump(calibrated_model, CALIBRATION_DIR / f"calibrated_model_{model_name}.joblib")
 
     return calibrated_model
 
@@ -229,7 +243,10 @@ if __name__ == "__main__":
         X_val_processed = process_data(model=model_config["type"], X=X_val)
 
         model = joblib.load(model_config["path"])
-        calibrated_model = calibrate_model(model=model, X=X_val_processed, y=y_val)
+        calibrated_model = calibrate_model(model=model,
+                                           model_name=model_config["name"],
+                                           X=X_val_processed,
+                                           y=y_val)
 
         X_test_processed = process_data(model=model_config["type"], X=X_test)
         

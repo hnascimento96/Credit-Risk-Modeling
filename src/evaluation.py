@@ -4,18 +4,18 @@ import joblib
 
 from sklearn.metrics import (
     roc_auc_score,
-    precision_score,
-    recall_score,
     roc_curve
 )
 
 from src.config import(
     X_TRAIN_DIR, Y_TRAIN_DIR,
-    X_VAL_DIR, Y_VAL_DIR, 
-    PREPROCESSOR_ENSEMBLE, PREPROCESSOR_LOG_REG,
-    MODEL_LOG_REG_DIR, MODEL_CATBOOST_DIR, MODEL_RANDOM_FOR_DIR,
-    MODEL_LIGHTGBM_DIR, MODEL_XGBOOST_DIR, MODELS_LIST, METRICS_DIR
-) 
+    X_VAL_DIR, Y_VAL_DIR,
+    MODELS_LIST, METRICS_DIR
+)
+
+# Single source of preprocessing: the same function used by training,
+# calibration and the notebooks
+from src.processing import process_data
 
 def brier_score(y_pred, y_obs):
 
@@ -73,33 +73,16 @@ def evaluate_model(model, X, y, model_name, threshold=0.5):
         "Brier score" : brier_sc
     }
 
-def process_data(model, X):
-
-    if model not in ("log_reg", "ensemble"):
-        raise ValueError(
-            f"Invalid model name {model!r}. Valid names are 'log_reg', 'ensemble'"
-        )
-
-    preprocessor_dir = {
-        "log_reg" : PREPROCESSOR_LOG_REG,
-        "ensemble" : PREPROCESSOR_ENSEMBLE
-    }
-
-    processor = joblib.load(preprocessor_dir[model])
-    X = processor.transform(X)
-
-    return X
-
 def get_metrics(X, y):
     results = []
 
-    # Train metrics
-    for model in MODELS_LIST:
-        X_processed = process_data(model["type"], X)
+    for model_config in MODELS_LIST:
+        X_processed = process_data(model_config["type"], X)
 
-        # Evaluates model
-        model["params"] = joblib.load(model["path"])
-        result = evaluate_model(model["params"], X_processed, y, model["name"])
+        # Loads the trained model into a local variable
+        # (does not change the shared config dictionary)
+        model = joblib.load(model_config["path"])
+        result = evaluate_model(model, X_processed, y, model_config["name"])
 
         results.append(result)
 
@@ -163,9 +146,3 @@ if __name__ == "__main__":
     print("-"*100)
     print(f"Difference values (validation - train):")
     print(difference_df)
-
-
-
-
-
-
