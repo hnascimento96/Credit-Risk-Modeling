@@ -14,7 +14,7 @@ from src.config import(
     X_VAL_DIR, Y_VAL_DIR, 
     PREPROCESSOR_ENSEMBLE, PREPROCESSOR_LOG_REG,
     MODEL_LOG_REG_DIR, MODEL_CATBOOST_DIR, MODEL_RANDOM_FOR_DIR,
-    MODEL_LIGHTGBM_DIR, MODEL_XGBOOST_DIR, MODELS_LIST
+    MODEL_LIGHTGBM_DIR, MODEL_XGBOOST_DIR, MODELS_LIST, METRICS_DIR
 ) 
 
 def brier_score(y_pred, y_obs):
@@ -138,6 +138,11 @@ if __name__ == "__main__":
     print(f"Validation metrics:")
     print(val_metrics_df)
 
+    # Save metrics, so versions can be compared later
+    METRICS_DIR.mkdir(parents=True, exist_ok=True)
+    train_metrics_df.to_csv(METRICS_DIR / "train_metrics.csv", index=False)
+    val_metrics_df.to_csv(METRICS_DIR / "validation_metrics.csv", index=False)
+
 
     ####################
     # Difference values
@@ -156,7 +161,7 @@ if __name__ == "__main__":
     difference_df = merged_df.loc[:, ["Model", "ROC-AUC (diff.)", "KS (diff.)"]]
 
     print("-"*100)
-    print(f"Difference values (train - validation):")
+    print(f"Difference values (validation - train):")
     print(difference_df)
 
 

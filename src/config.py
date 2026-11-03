@@ -34,6 +34,9 @@ MODEL_CATBOOST_DIR = PROJECT_ROOT / "models" / "catboost.joblib"
 MODEL_XGBOOST_DIR = PROJECT_ROOT / "models" / "xgboost.joblib"
 MODEL_LIGHTGBM_DIR = PROJECT_ROOT / "models" / "lightgbm.joblib"
 
+# Model metrics
+METRICS_DIR = PROJECT_ROOT / "reports" / "metrics"
+
 # Credit policy reports
 CREDIT_POLICY_DIR = PROJECT_ROOT / "reports" / "credit_policy"
 
