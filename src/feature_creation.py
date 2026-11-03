@@ -23,9 +23,17 @@ def check_dataframe(X, step_name):
     The transformers below select columns by name, so they need a DataFrame.
     In the pipeline this is guaranteed by 'set_output(transform="pandas")'.
 
-    Args:
-        X: data received by the transformer.
-        step_name: name of the transformer, used in the error message.
+    Parameters
+    ----------
+    X : object
+        Data received by the transformer.
+    step_name : str
+        Name of the transformer, used in the error message.
+
+    Raises
+    ------
+    TypeError
+        If X is not a pandas DataFrame.
     """
     if not isinstance(X, pd.DataFrame):
         raise TypeError(
@@ -63,7 +71,14 @@ class DataCleaning(BaseEstimator, TransformerMixin):
 
     Input: DataFrame containing at least Util, Income, Debt and the LATE_COLS.
     Output: the same DataFrame (cleaned) plus the columns IncomeMissing,
-            SpecialCode and UtilInvalid.
+    SpecialCode and UtilInvalid.
+
+    Attributes
+    ----------
+    feature_names_in_ : numpy.ndarray
+        Input column names, stored in 'fit'.
+    n_features_in_ : int
+        Number of input columns, stored in 'fit'.
     """
 
     FLAGS = ["IncomeMissing", "SpecialCode", "UtilInvalid"]
@@ -73,12 +88,17 @@ class DataCleaning(BaseEstimator, TransformerMixin):
         Nothing to learn (the medians are learned by the imputer that comes
         next); only stores the input column names.
 
-        Args:
-            X: train DataFrame.
-            y: ignored; kept for sklearn compatibility.
+        Parameters
+        ----------
+        X : pandas.DataFrame
+            Train data.
+        y : None
+            Ignored; kept for sklearn compatibility.
 
-        Returns:
-            self, with feature_names_in_ and n_features_in_.
+        Returns
+        -------
+        self : DataCleaning
+            The fitted transformer, with feature_names_in_ and n_features_in_.
         """
         check_dataframe(X, "DataCleaning")
         self.feature_names_in_ = np.array(X.columns, dtype=object)
@@ -90,11 +110,16 @@ class DataCleaning(BaseEstimator, TransformerMixin):
         """
         Creates the flags and replaces the invalid values by NaN.
 
-        Args:
-            X: DataFrame to transform (same columns as in 'fit').
+        Parameters
+        ----------
+        X : pandas.DataFrame
+            Data to transform (same columns as in 'fit').
 
-        Returns:
-            Copy of X, cleaned, plus IncomeMissing, SpecialCode and UtilInvalid.
+        Returns
+        -------
+        pandas.DataFrame
+            Copy of X, cleaned, plus IncomeMissing, SpecialCode and
+            UtilInvalid.
         """
         check_dataframe(X, "DataCleaning")
 
@@ -127,6 +152,16 @@ class DataCleaning(BaseEstimator, TransformerMixin):
         """
         Returns the output column names: input columns + the 3 flags.
         Needed so the pipeline can keep the column names.
+
+        Parameters
+        ----------
+        input_features : None
+            Ignored; kept for sklearn compatibility.
+
+        Returns
+        -------
+        numpy.ndarray
+            Output column names.
         """
         return np.array(list(self.feature_names_in_) + self.FLAGS, dtype=object)
 
@@ -146,6 +181,13 @@ class FeatureCreation(BaseEstimator, TransformerMixin):
 
     Input: DataFrame containing at least Util and the LATE_COLS.
     Output: the same DataFrame plus the 4 new columns.
+
+    Attributes
+    ----------
+    feature_names_in_ : numpy.ndarray
+        Input column names, stored in 'fit'.
+    n_features_in_ : int
+        Number of input columns, stored in 'fit'.
     """
 
     NEW_FEATURES = ["AnyLate", "TotalLate", "LateScore", "UtilAbove100"]
@@ -154,12 +196,17 @@ class FeatureCreation(BaseEstimator, TransformerMixin):
         """
         Nothing to learn; only stores the input column names.
 
-        Args:
-            X: train DataFrame.
-            y: ignored; kept for sklearn compatibility.
+        Parameters
+        ----------
+        X : pandas.DataFrame
+            Train data.
+        y : None
+            Ignored; kept for sklearn compatibility.
 
-        Returns:
-            self, with feature_names_in_ and n_features_in_.
+        Returns
+        -------
+        self : FeatureCreation
+            The fitted transformer, with feature_names_in_ and n_features_in_.
         """
         check_dataframe(X, "FeatureCreation")
         self.feature_names_in_ = np.array(X.columns, dtype=object)
@@ -171,10 +218,14 @@ class FeatureCreation(BaseEstimator, TransformerMixin):
         """
         Adds the derived features.
 
-        Args:
-            X: DataFrame to transform (same columns as in 'fit').
+        Parameters
+        ----------
+        X : pandas.DataFrame
+            Data to transform (same columns as in 'fit').
 
-        Returns:
+        Returns
+        -------
+        pandas.DataFrame
             Copy of X plus AnyLate, TotalLate, LateScore and UtilAbove100.
         """
         check_dataframe(X, "FeatureCreation")
@@ -198,6 +249,16 @@ class FeatureCreation(BaseEstimator, TransformerMixin):
         """
         Returns the output column names: input columns + the 4 new features.
         Needed so the pipeline can keep the column names.
+
+        Parameters
+        ----------
+        input_features : None
+            Ignored; kept for sklearn compatibility.
+
+        Returns
+        -------
+        numpy.ndarray
+            Output column names.
         """
         return np.array(
             list(self.feature_names_in_) + self.NEW_FEATURES, dtype=object

@@ -1,13 +1,40 @@
+"""
+Training of the credit risk models.
+
+Trains five binary classifiers of the probability of default (PD) and saves
+each one to disk (paths in src.config):
+  - Logistic Regression  -> preprocessor 'log_reg' (standardized features)
+  - Random Forest, CatBoost, XGBoost, LightGBM -> preprocessor 'ensemble'
+    (features not scaled)
+
+The features come from the saved preprocessors, so run this first:
+    python -m src.processing
+then:
+    python -m src.modeling
+
+Class imbalance: the default rate is about 6.7%, so every model gives more
+weight to the defaulters (class 1). Each library has its own parameter:
+class_weight="balanced" (Logistic Regression, Random Forest, LightGBM),
+auto_class_weights="Balanced" (CatBoost) and scale_pos_weight (XGBoost).
+Because of this weighting, the predicted probabilities are inflated and are
+NOT calibrated PDs (high Brier score); they are calibrated later in
+src.calibration.
+
+Hyperparameters are fixed (no tuning), so changes in the metrics between
+versions come only from the preprocessing.
+"""
+
 import pandas as pd
-import numpy as np
 import joblib
 
 from src.config import (
     X_TRAIN_DIR, Y_TRAIN_DIR,
-    PREPROCESSOR_LOG_REG, PREPROCESSOR_ENSEMBLE,
     MODEL_LOG_REG_DIR, MODEL_RANDOM_FOR_DIR, MODEL_CATBOOST_DIR,
     MODEL_XGBOOST_DIR, MODEL_LIGHTGBM_DIR
 )
+
+# Same preprocessing function used by evaluation, calibration and notebooks
+from src.processing import process_data
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -22,9 +49,9 @@ def get_data():
     Returns
     -------
     X_train : pandas.DataFrame
-        Training features indexed by customer ID.
+        Training features (10 original columns) indexed by customer ID.
     y_train : pandas.Series
-        Training target indicating whether a customer defaulted.
+        Training target indicating whether a customer defaulted (1 = default).
     """
 
     X_train = pd.read_csv(X_TRAIN_DIR, index_col="ID")
@@ -36,8 +63,10 @@ def get_data():
 
 def train_log_reg(X_train, y_train):
     """
-    Trains a Logistic Regression classifier using the saved preprocessing
-    pipeline and saves the trained model to disk.
+    Trains a Logistic Regression classifier on the 'log_reg' preprocessed
+    features and saves the trained model to disk.
+
+    Classes are balanced with class_weight="balanced".
 
     Parameters
     ----------
@@ -51,11 +80,11 @@ def train_log_reg(X_train, y_train):
     None
     """
     # Processing data
-    log_reg_processor = joblib.load(PREPROCESSOR_LOG_REG)
-    X_train = log_reg_processor.transform(X_train)
+    X_train = process_data(model="log_reg", X=X_train)
 
     # Initializing classifier
-    # L2 regularization with lambda coefficient = 1/2C
+    # L2 regularization (default penalty). C is the inverse of the
+    # regularization strength: smaller C means stronger regularization.
     log_reg_model = LogisticRegression(C=1.0,
                                        max_iter=1000,
                                        random_state=42,
@@ -69,15 +98,17 @@ def train_log_reg(X_train, y_train):
 
 def train_random_forest(X_train, y_train):
     """
-    Trains a Random Forest classifier using the saved preprocessing pipeline
-    and saves the trained model to disk.
+    Trains a Random Forest classifier on the 'ensemble' preprocessed
+    features and saves the trained model to disk.
+
+    Classes are balanced with class_weight="balanced".
 
     Parameters
     ----------
     X_train : pandas.DataFrame
         Training features containing the original input columns.
-    y_train : pandas.Series or pandas.DataFrame
-        Target variable indicating whether a customer defaulted.
+    y_train : pandas.Series
+        Training target indicating whether a customer defaulted.
 
     Returns
     -------
@@ -85,10 +116,9 @@ def train_random_forest(X_train, y_train):
     """
 
     # Processing input data
-    ensemble_processor = joblib.load(PREPROCESSOR_ENSEMBLE)
-    X_train = ensemble_processor.transform(X_train)
+    X_train = process_data(model="ensemble", X=X_train)
 
-    # Initializating classifier
+    # Initializing classifier
     random_forest_model = RandomForestClassifier(
         n_estimators=200,
         max_depth=10,
@@ -106,15 +136,17 @@ def train_random_forest(X_train, y_train):
 
 def train_catboost(X_train, y_train):
     """
-    Trains a CatBoost classifier using the saved preprocessing pipeline
+    Trains a CatBoost classifier on the 'ensemble' preprocessed features
     and saves the trained model to disk.
+
+    Classes are balanced with auto_class_weights="Balanced".
 
     Parameters
     ----------
     X_train : pandas.DataFrame
         Training features containing the original input columns.
-    y_train : pandas.Series or pandas.DataFrame
-        Target variable indicating whether a customer defaulted.
+    y_train : pandas.Series
+        Training target indicating whether a customer defaulted.
 
     Returns
     -------
@@ -122,8 +154,7 @@ def train_catboost(X_train, y_train):
     """
 
     # Processing input data
-    ensemble_processor = joblib.load(PREPROCESSOR_ENSEMBLE)
-    X_train = ensemble_processor.transform(X_train)
+    X_train = process_data(model="ensemble", X=X_train)
 
     # Initializing classifier
     catboost_model = CatBoostClassifier(
@@ -145,23 +176,25 @@ def train_catboost(X_train, y_train):
 
 def train_xgboost(X_train, y_train):
     """
-    Trains an XGBoost classifier using the saved preprocessing pipeline
+    Trains an XGBoost classifier on the 'ensemble' preprocessed features
     and saves the trained model to disk.
+
+    Classes are balanced with scale_pos_weight = (number of non-defaulters)
+    / (number of defaulters), computed from y_train (about 14 for this data).
 
     Parameters
     ----------
     X_train : pandas.DataFrame
         Training features containing the original input columns.
-    y_train : pandas.Series or pandas.DataFrame
-        Target variable indicating whether a customer defaulted.
+    y_train : pandas.Series
+        Training target indicating whether a customer defaulted.
 
     Returns
     -------
     None
     """
     # Process input data
-    ensemble_processor = joblib.load(PREPROCESSOR_ENSEMBLE)
-    X_train = ensemble_processor.transform(X_train)
+    X_train = process_data(model="ensemble", X=X_train)
 
     # Initialize model
     xgboost_model = XGBClassifier(
@@ -182,27 +215,27 @@ def train_xgboost(X_train, y_train):
 
     # Save model
     joblib.dump(xgboost_model, MODEL_XGBOOST_DIR)
+
 def train_lightgbm(X_train, y_train):
     """
-    Trains a LightGBM classifier using the saved preprocessing pipeline
+    Trains a LightGBM classifier on the 'ensemble' preprocessed features
     and saves the trained model to disk.
+
+    Classes are balanced with class_weight="balanced".
 
     Parameters
     ----------
     X_train : pandas.DataFrame
         Training features containing the original input columns.
-    y_train : pandas.Series or pandas.DataFrame
-        Target variable indicating whether a customer defaulted.
+    y_train : pandas.Series
+        Training target indicating whether a customer defaulted.
 
     Returns
     -------
     None
     """
     # Process input data
-    ensemble_processor = joblib.load(PREPROCESSOR_ENSEMBLE)
-    X_train = ensemble_processor.transform(X_train)
-
-    y_train = y_train.squeeze()
+    X_train = process_data(model="ensemble", X=X_train)
 
     # Initialize model
     lightgbm_model = LGBMClassifier(
@@ -234,4 +267,3 @@ if __name__ == "__main__":
     train_catboost(X_train, y_train)
     train_xgboost(X_train, y_train)
     train_lightgbm(X_train, y_train)
-

@@ -151,14 +151,21 @@ def calibrate_model(model, model_name, X, y):
 
     The original model is frozen: only the calibration layer is fitted.
 
-    Args:
-        model: trained model with predict_proba().
-        model_name: model name, used in the saved file name
-                    (e.g. 'XGBoost' -> calibrated_model_XGBoost.joblib).
-        X: processed features used to fit the calibration (validation set).
-        y: observed target for X.
+    Parameters
+    ----------
+    model : estimator
+        Trained model with predict_proba().
+    model_name : str
+        Model name, used in the saved file name
+        (e.g. 'XGBoost' -> calibrated_model_XGBoost.joblib).
+    X : pandas.DataFrame
+        Processed features used to fit the calibration (validation set).
+    y : pandas.Series
+        Observed target for X.
 
-    Returns:
+    Returns
+    -------
+    CalibratedClassifierCV
         The calibrated model.
     """
     calibrated_model = CalibratedClassifierCV(

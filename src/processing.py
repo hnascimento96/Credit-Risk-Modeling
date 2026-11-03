@@ -61,18 +61,25 @@ def preprocessing(model, X_train):
     Builds the preprocessor of one model type, fits it on the train set
     and saves it to disk.
 
-    Args:
-        model: model type, 'log_reg' or 'ensemble'. Defines whether the
-               features are standardized ('log_reg') or not ('ensemble').
-        X_train: train DataFrame with the 10 original columns
-                 (Util, Age, Late30_59, Debt, Income, OpenCred, Late90,
-                 RealEstate, Late60_89, No.Dep), indexed by ID.
+    Parameters
+    ----------
+    model : str
+        Model type, 'log_reg' or 'ensemble'. Defines whether the features
+        are standardized ('log_reg') or not ('ensemble').
+    X_train : pandas.DataFrame
+        Train data with the 10 original columns (Util, Age, Late30_59, Debt,
+        Income, OpenCred, Late90, RealEstate, Late60_89, No.Dep), indexed
+        by ID.
 
-    Returns:
-        None. The fitted preprocessor is saved to PREPROCESSOR_DIR[model].
+    Returns
+    -------
+    None
+        The fitted preprocessor is saved to PREPROCESSOR_DIR[model].
 
-    Raises:
-        ValueError: if 'model' is not 'log_reg' or 'ensemble'.
+    Raises
+    ------
+    ValueError
+        If 'model' is not 'log_reg' or 'ensemble'.
     """
     if model not in ("log_reg", "ensemble"):
         raise ValueError(
@@ -141,19 +148,26 @@ def process_data(model, X):
     Use it everywhere the models receive data (training, evaluation,
     calibration, notebooks), so all of them see exactly the same features.
 
-    Args:
-        model: model type, 'log_reg' or 'ensemble'.
-        X: DataFrame with the 10 original columns (same as in
-           'preprocessing'), indexed by ID. Train, validation or test.
+    Parameters
+    ----------
+    model : str
+        Model type, 'log_reg' or 'ensemble'.
+    X : pandas.DataFrame
+        Data with the 10 original columns (same as in 'preprocessing'),
+        indexed by ID. Train, validation or test.
 
-    Returns:
-        DataFrame with 17 named columns and the same index as X:
-        the 9 original numeric features (cleaned and imputed),
-        IncomeMissing, SpecialCode, UtilInvalid, AnyLate, TotalLate,
-        LateScore, UtilAbove100 and No.Dep. Standardized if model is 'log_reg'.
+    Returns
+    -------
+    pandas.DataFrame
+        17 named columns, with the same index as X: the 9 original numeric
+        features (cleaned and imputed), IncomeMissing, SpecialCode,
+        UtilInvalid, AnyLate, TotalLate, LateScore, UtilAbove100 and No.Dep.
+        Standardized if model is 'log_reg'.
 
-    Raises:
-        ValueError: if 'model' is not 'log_reg' or 'ensemble'.
+    Raises
+    ------
+    ValueError
+        If 'model' is not 'log_reg' or 'ensemble'.
     """
     if model not in ("log_reg", "ensemble"):
         raise ValueError(
