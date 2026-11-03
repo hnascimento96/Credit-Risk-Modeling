@@ -21,8 +21,33 @@ from src.evaluation import evaluate_model
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.frozen import FrozenEstimator
 
-def decile_analysis(model_name, y_pred, y_obs, calibrated):
+def decile_analysis(model_name, y_pred, y_obs, calibrated, save=True):
+    """
+    Compares predicted and observed default rates by PD decile and plots
+    them as a bar chart (predicted) with a line (observed).
 
+    Parameters
+    ----------
+    model_name : str
+        Model name, used in the plot title and in the saved file name.
+    y_pred : numpy.ndarray
+        Predicted probabilities of default.
+    y_obs : pandas.Series
+        Observed target (1 = default), in the same row order as y_pred.
+    calibrated : bool
+        Whether the model is calibrated (only changes the title and the
+        folder: fig/calibrated or fig/raw).
+    save : bool, default=True
+        If True, saves the figure in CALIBRATION_DIR and closes it (used by
+        the script). If False, the figure is left open, so a notebook shows
+        it inline and nothing is written to disk.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per decile with the mean predicted rate ('y_pred'), the
+        observed rate ('y_obs') and their ratio ('op_ratio').
+    """
     if calibrated not in (False, True):
         raise ValueError(
             f"Invalid argument {calibrated!r} for 'calibrated'\n Valid values: 'True', 'False'"
@@ -79,12 +104,15 @@ def decile_analysis(model_name, y_pred, y_obs, calibrated):
     plt.title(f"{model_name} default rate by decile ({calibration_status[calibrated]})")
     
     plt.legend()
-    plt.savefig(save_path)
-    
 
-    #print(mean_df)
+    if save:
+        plt.savefig(save_path)
+        # Closing avoids keeping many open figures when the script runs
+        plt.close()
 
-def evaluate_calibration(model, model_name, X, y, calibrated=False):
+    return mean_df
+
+def evaluate_calibration(model, model_name, X, y, calibrated=False, save=True):
     """
     Evaluates a trained model using predicted probabilities and performs
     decile analysis.
@@ -101,10 +129,14 @@ def evaluate_calibration(model, model_name, X, y, calibrated=False):
         Observed target values.
     calibrated : bool, default=False
         Indicates whether the model is calibrated.
+    save : bool, default=True
+        Passed to decile_analysis: save the figure (script) or only show it
+        (notebook).
 
     Returns
     -------
-    None
+    pandas.DataFrame
+        Decile table returned by decile_analysis.
     """
     y_pred = model.predict_proba(X)[:, 1]
 
@@ -112,11 +144,12 @@ def evaluate_calibration(model, model_name, X, y, calibrated=False):
     # print("Statistics")
     # print(f"model_name: {model_name}")
 
-    decile_analysis(
+    return decile_analysis(
         model_name=model_name,
         y_obs=y,
         y_pred=y_pred,
-        calibrated=calibrated
+        calibrated=calibrated,
+        save=save
     )
 
 
