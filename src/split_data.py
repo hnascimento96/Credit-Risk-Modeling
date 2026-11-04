@@ -46,6 +46,27 @@ No.Dep
     Number of dependents in the borrower's household
 """
 
+def count_raw_duplicates():
+    """
+    Counts the exact duplicate rows in the raw dataset.
+
+    Loads the raw dataset, assigns the column names and compares rows on
+    all columns except the index (ID). Duplicates are kept in the
+    dataset; this function only counts them. The raw data is loaded
+    inside the function, so that other modules can get this number
+    without accessing the raw dataset directly.
+
+    Returns
+    -------
+    int
+        Number of duplicate rows.
+    """
+
+    credit_data = pd.read_csv(DATA_RAW)
+    credit_data = set_columns(credit_data)
+
+    return credit_data.duplicated().sum()
+
 def set_columns(credit_data):
     """
     Assigns column names to the credit dataset and sets 'ID' as the index.
